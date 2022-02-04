@@ -26,11 +26,13 @@ namespace UrlTube
                     var fUrls = File.ReadAllLines(fPath);
                     foreach (string fUrl in fUrls) Program.rawUrls.Add(fUrl);
                     foreach (string fUrl in Program.rawUrls) Program.FilteredUrls.Add(videoID(fUrl));
-                    Program.FilteredUrls.Distinct<string>();
+                    Program.FilteredUrls = Program.FilteredUrls.Distinct().ToList<string>();
                     foreach (string fUrl in Program.FilteredUrls) Console.WriteLine($"{fUrl}");
 
                 }
             }
+
+
 
             
         }
