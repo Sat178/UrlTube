@@ -17,5 +17,6 @@ namespace UrlTube
 
         public static List<string> rawUrls = new List<string>();
         public static List<string> FilteredUrls = new List<string>();
+        public static List<string> UrlsDL = new List<string>();
     }
 }
