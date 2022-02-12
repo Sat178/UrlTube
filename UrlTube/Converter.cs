@@ -42,9 +42,9 @@ namespace UrlTube
             {
                 vidUrl = vidUrl.Split(new string[]
                 {
-                        "https://www.youtube.com/watch?v="
+                        " ",
 
-                }, StringSplitOptions.None)[1];
+                }, StringSplitOptions.None)[0];
             }
 
             return vidUrl;
@@ -52,8 +52,8 @@ namespace UrlTube
 
         public static string videoDL(string vidID)
         {
-            string Ldl = "https://ybm.pw/mp4/";
-            string Ldr = "&bg=ec9702#";
+            string Ldl = "{\"url\":\"";
+            string Ldr = "\"}";
 
             return string.Format("{0}{1}{2}", new object[]
             {
@@ -67,11 +67,26 @@ namespace UrlTube
         {
             using (HttpRequest hr = new HttpRequest())
             {
-                var getCL = hr.Get(dlLoc);
-                Console.WriteLine(getCL); 
-            }
+                hr.AddHeader("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36");
+                hr.AllowAutoRedirect = false;
+                hr.AllowEmptyHeaderValues = true;
+                hr.IgnoreInvalidCookie = false;
+                hr.IgnoreProtocolErrors = true;
 
-            return;
+                var data = hr.Post("https://api.onlinevideoconverter.pro/api/convert", dlLoc, "application/json");
+                Console.WriteLine(data);
+            }
+                
+            /*
+            var x = webBrowser.Document.GetElementById("buttonTitle").ToString();
+            Console.WriteLine(x);
+
+            webBrowser.Document.GetElementById("downloadButton").InvokeMember("onclick");
+
+            */
+
+            // Console.WriteLine(pInfo);
+
         }
         public static void Trimmer()
         {
