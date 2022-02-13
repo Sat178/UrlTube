@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.Net;
 using Leaf.xNet;
+using Newtonsoft.Json.Linq;
 
 namespace UrlTube
 {
@@ -73,8 +74,9 @@ namespace UrlTube
                 hr.IgnoreInvalidCookie = false;
                 hr.IgnoreProtocolErrors = true;
 
-                var data = hr.Post("https://api.onlinevideoconverter.pro/api/convert", dlLoc, "application/json");
-                Console.WriteLine(data);
+                var rwData = hr.Post("https://api.onlinevideoconverter.pro/api/convert", dlLoc, "application/json").ToString();
+                JsonParser(rwData);
+                Console.WriteLine(rwData);
             }
                 
             /*
@@ -87,6 +89,21 @@ namespace UrlTube
 
             // Console.WriteLine(pInfo);
 
+        }
+
+        public static void JsonParser(string rawData)
+        {
+            try
+            {
+                /* JObject jobj = JObject.Parse(rawData);
+                string streamInfo = jobj.SelectToken("converter").ToString();
+                Console.WriteLine(streamInfo); */
+
+
+            } catch
+            {
+
+            }
         }
         public static void Trimmer()
         {
