@@ -9,6 +9,7 @@ using System.IO;
 using System.Net;
 using Leaf.xNet;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace UrlTube
 {
@@ -31,7 +32,7 @@ namespace UrlTube
                     foreach (string fUrl in Program.rawUrls) Program.FilteredUrls.Add(videoID(fUrl));
                     Program.FilteredUrls = Program.FilteredUrls.Distinct().ToList<string>();
                     foreach (string fID in Program.FilteredUrls) Program.UrlsDL.Add(videoDL(fID));
-                    foreach (string finalDL in Program.UrlsDL) Console.WriteLine($"{finalDL}");
+                    //foreach (string finalDL in Program.UrlsDL) Console.WriteLine($"{finalDL}");
                     foreach (string dlLoc in Program.UrlsDL) Downloader(dlLoc);
 
                 }
@@ -95,15 +96,45 @@ namespace UrlTube
         {
             try
             {
-                /* JObject jobj = JObject.Parse(rawData);
-                string streamInfo = jobj.SelectToken("converter").ToString();
-                Console.WriteLine(streamInfo); */
+                JObject jobj = JObject.Parse(rawData);
 
+                string Urls = jobj.SelectToken("url").ToString();
+                //Console.WriteLine(Urls);
 
-            } catch
+                string dlUrl = Urls.Split(new string[]
+                {
+                    "https://du."
+                }, StringSplitOptions.None)[1];
+
+                //Console.WriteLine(dlUrl);
+
+                string fdlUrl = dlUrl.Split(new string[]
+                {
+                    "\","
+                }, StringSplitOptions.None)[0];
+
+                string append = "https://du.";
+
+                string rdyUrl = string.Format("{0}{1}", new object[]
+                {
+                    append,
+                    fdlUrl
+                });
+
+                Console.WriteLine(rdyUrl);
+                
+
+            } catch (Exception e)
             {
-
+                //Console.WriteLine(e);
+                return;
             }
+        }
+
+        public class vidInfo
+        {
+            public string stream { get; set; }
+            public string url { get; set; }
         }
         public static void Trimmer()
         {
