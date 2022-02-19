@@ -5,7 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using System.Net;
-
+using Console = Colorful.Console;
+using System.Drawing;
 
 namespace UrlTube
 {
@@ -26,9 +27,13 @@ namespace UrlTube
                     var fUrls = File.ReadAllLines(fPath); // Read all lines/urls in the .txt file
                     foreach (string fUrl in fUrls) Program.rawUrls.Add(fUrl); // Add all urls into List<string>
                     foreach (string fUrl in Program.rawUrls) Program.FilteredUrls.Add(videoID(fUrl)); //Foreach url cycle thru videoID to get VideoID (which is currently off, because I don't need it for now)
-                    Program.FilteredUrls = Program.FilteredUrls.Distinct().ToList<string>(); // Distinct (remove duplicates from lists)
+                    Program.FilteredUrls = Program.FilteredUrls.Distinct().ToList<string>(); // Distinct (remove duplicates from lists) 
+                    var urlAmount = Program.FilteredUrls.Count<string>(); // Count amount of urls
+                    Console.Write("Successfully loaded", Color.IndianRed);
+                    Console.Write(" {0}", Color.White, urlAmount);
+                    Console.Write(" valid UrlTube urls!\n\n", Color.IndianRed, urlAmount);
                     foreach (string fID in Program.FilteredUrls) Program.UrlsDL.Add(videoDL(fID)); // Add all POST-ready request into List<string>
-                                                                                                   //foreach (string finalDL in Program.UrlsDL) Console.WriteLine($"{finalDL}");
+                    //foreach (string finalDL in Program.UrlsDL) Console.WriteLine($"{finalDL}");
                     foreach (string dlLoc in Program.UrlsDL) Downloader(dlLoc);
 
                 }
@@ -39,9 +44,9 @@ namespace UrlTube
             if (vidUrl.Contains("https://www.youtube.com/watch?v="))
             {
                 vidUrl = vidUrl.Split(new string[] {
-          " ", // Remove unnecessary blank spaces {"https://www.youtube.com/watch?v="}
+                    " ", // Remove unnecessary blank spaces {"https://www.youtube.com/watch?v="}
 
-        }, StringSplitOptions.None)[0];
+                }, StringSplitOptions.None)[0];
             }
 
             return vidUrl;
@@ -53,39 +58,55 @@ namespace UrlTube
             string Ldr = "\"}"; //Necessary for POST request
 
             return string.Format("{0}{1}{2}", new object[] // Format string into right POST-format
-              {
-          Ldl,
-          vidID,
-          Ldr
-              });
+                {
+                    Ldl,
+                    vidID,
+                    Ldr
+                });
         }
 
         public static void Downloader(string dlLoc)
         {
-            using (HttpRequest hr = new HttpRequest())
+            try
             {
-                hr.AddHeader("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36");
-                hr.AllowAutoRedirect = false;
-                hr.AllowEmptyHeaderValues = true;
-                hr.IgnoreInvalidCookie = false;
-                hr.IgnoreProtocolErrors = true;
+                using (HttpRequest hr = new HttpRequest())
+                {
+                    Program.UrlCount++;
+                    hr.AddHeader("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36");
+                    hr.AllowAutoRedirect = false;
+                    hr.AllowEmptyHeaderValues = true;
+                    hr.IgnoreInvalidCookie = false;
+                    hr.IgnoreProtocolErrors = true;
 
-                string hID = dlLoc.Split(new string[] // Example {"url":"https://www.youtube.com/watch?v=t7a-b1zTS60"}
-                  {
-            "{\"url\":\"https://www.youtube.com/watch?v=",
-                  }, StringSplitOptions.None)[1];
+                    string hID = dlLoc.Split(new string[] // Example {"url":"https://www.youtube.com/watch?v=t7a-b1zTS60"}
+                        {
+                        "{\"url\":\"https://www.youtube.com/watch?v=",
+                        }, StringSplitOptions.None)[1];
 
-                Program.fullID = hID.Split(new string[] {
-          "\"}"
-        }, StringSplitOptions.None)[0];
+                    Program.fullID = hID.Split(new string[] {
+                    "\"}"
+                }, StringSplitOptions.None)[0];
 
-                //Console.WriteLine(fullID);
+                    Console.Write("Converting Url ", Color.White);
+                    Console.Write("[", Color.IndianRed);
+                    Console.Write("{0}", Color.White, Program.UrlCount);
+                    Console.Write("] ", Color.IndianRed);
+                    Console.Write(" | ID:");
+                    Console.Write(" {0}\n", Color.IndianRed, Program.fullID);
 
-                var rwData = hr.Post("https://api.onlinevideoconverter.pro/api/convert", dlLoc, "application/json").ToString();
-                JsonParser(rwData);
-                //Console.WriteLine(rwData);
-                Console.WriteLine("Finished: {0}", Program.fullID);
+                    //Console.WriteLine(fullID);
+
+                    var rwData = hr.Post("https://api.onlinevideoconverter.pro/api/convert", dlLoc, "application/json").ToString();
+                    JsonParser(rwData);
+                    //Console.WriteLine(rwData);
+                    //Console.WriteLine("Finished: {0}", Program.fullID);
+                }
+            } 
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
             }
+            
 
         }
 
@@ -97,57 +118,60 @@ namespace UrlTube
                 JObject jobj = JObject.Parse(rawData);
 
                 string Urls = jobj.SelectToken("url").ToString();
-                //Console.WriteLine(Urls);
+                Console.WriteLine(Urls);
                 try
                 {
                     if (Urls.Contains("https://du."))
                     {
 
                         string dlUrl = Urls.Split(new string[] {
-              "https://du."
-            }, StringSplitOptions.None)[1];
+                            "https://du."
+                        }, StringSplitOptions.None)[1];
 
                         //Console.WriteLine(dlUrl);
 
                         string fdlUrl = dlUrl.Split(new string[] {
-              "\","
-            }, StringSplitOptions.None)[0];
+                            "\","
+                        }, StringSplitOptions.None)[0];
 
                         string append = "https://du.";
 
                         Program.rdyUrl = string.Format("{0}{1}", new object[] {
-              append,
-              fdlUrl
-            });
+                            append,
+                            fdlUrl
+                        });
+
+                        Console.WriteLine(Program.rdyUrl);
                     }
-                    else
+                    else 
                     {
                         string dlUrl = Urls.Split(new string[] {
-              "https:\\/\\/ "
-            }, StringSplitOptions.None)[1];
+                            "https:\\/\\/ "
+                        }, StringSplitOptions.None)[1];
 
                         string fdlUrl = dlUrl.Split(new string[] {
-              "\","
-            }, StringSplitOptions.None)[0];
+                            "\","
+                        }, StringSplitOptions.None)[0];
 
                         string append = "https:\\/\\/";
 
                         Program.rdyUrl = string.Format("{0}{1}", new object[] {
-              append,
-              fdlUrl
-            });
+                            append,
+                            fdlUrl
+                        });
+
+                        Console.WriteLine(Program.rdyUrl);
                     }
 
                 }
-                catch
+                catch (Exception e)
                 {
-
+                    Console.WriteLine(e);
                 }
 
                 dirDownload(Program.rdyUrl);
-                //Console.WriteLine("Finished: {0}", Program.fullID);
-
-                //Console.WriteLine(rdyUrl);
+                
+                //Console.WriteLine(Program.rdyUrl);
 
             }
             catch (Exception e)
