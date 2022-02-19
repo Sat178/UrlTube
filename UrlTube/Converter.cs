@@ -1,4 +1,4 @@
-﻿using Leaf.xNet;
+using Leaf.xNet;
 using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using System.Net;
 using Console = Colorful.Console;
 using System.Drawing;
+
 
 namespace UrlTube
 {
@@ -27,22 +28,16 @@ namespace UrlTube
                     var fUrls = File.ReadAllLines(fPath); // Read all lines/urls in the .txt file
                     foreach (string fUrl in fUrls) Program.rawUrls.Add(fUrl); // Add all urls into List<string>
                     foreach (string fUrl in Program.rawUrls) Program.FilteredUrls.Add(videoID(fUrl)); //Foreach url cycle thru videoID to get VideoID (which is currently off, because I don't need it for now)
-                    Program.FilteredUrls = Program.FilteredUrls.Distinct().ToList<string>(); // Distinct (remove duplicates from lists) 
-                    var urlAmount = Program.FilteredUrls.Count<string>(); // Count amount of urls
-                    Console.Write("Successfully loaded", Color.IndianRed);
-                    Console.Write(" {0}", Color.White, urlAmount);
-                    Console.Write(" valid UrlTube urls!\n\n", Color.IndianRed, urlAmount);
+                    Program.FilteredUrls = Program.FilteredUrls.Distinct().ToList<string>(); // Distinct (remove duplicates from lists)
                     foreach (string fID in Program.FilteredUrls) Program.UrlsDL.Add(videoDL(fID)); // Add all POST-ready request into List<string>
-                    //foreach (string finalDL in Program.UrlsDL) Console.WriteLine($"{finalDL}");
+                                                                                                   //foreach (string finalDL in Program.UrlsDL) Console.WriteLine($"{finalDL}");
                     foreach (string dlLoc in Program.UrlsDL) Downloader(dlLoc);
 
                 }
             }
         }
-        public static string videoID(string vidUrl)
-        {
-            if (vidUrl.Contains("https://www.youtube.com/watch?v="))
-            {
+        public static string videoID(string vidUrl) {
+            if (vidUrl.Contains("https://www.youtube.com/watch?v=")) {
                 vidUrl = vidUrl.Split(new string[] {
                     " ", // Remove unnecessary blank spaces {"https://www.youtube.com/watch?v="}
 
@@ -52,8 +47,7 @@ namespace UrlTube
             return vidUrl;
         }
 
-        public static string videoDL(string vidID)
-        {
+        public static string videoDL(string vidID) {
             string Ldl = "{\"url\":\""; //Necessary for POST request
             string Ldr = "\"}"; //Necessary for POST request
 
@@ -67,25 +61,22 @@ namespace UrlTube
 
         public static void Downloader(string dlLoc)
         {
-            try
+            using (HttpRequest hr = new HttpRequest())
             {
-                using (HttpRequest hr = new HttpRequest())
-                {
-                    Program.UrlCount++;
-                    hr.AddHeader("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36");
-                    hr.AllowAutoRedirect = false;
-                    hr.AllowEmptyHeaderValues = true;
-                    hr.IgnoreInvalidCookie = false;
-                    hr.IgnoreProtocolErrors = true;
+                hr.AddHeader("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36");
+                hr.AllowAutoRedirect = false;
+                hr.AllowEmptyHeaderValues = true;
+                hr.IgnoreInvalidCookie = false;
+                hr.IgnoreProtocolErrors = true;
 
-                    string hID = dlLoc.Split(new string[] // Example {"url":"https://www.youtube.com/watch?v=t7a-b1zTS60"}
-                        {
-                        "{\"url\":\"https://www.youtube.com/watch?v=",
-                        }, StringSplitOptions.None)[1];
+                string hID = dlLoc.Split(new string[] // Example {"url":"https://www.youtube.com/watch?v=t7a-b1zTS60"}
+                  {
+            "{\"url\":\"https://www.youtube.com/watch?v=",
+                  }, StringSplitOptions.None)[1];
 
-                    Program.fullID = hID.Split(new string[] {
-                    "\"}"
-                }, StringSplitOptions.None)[0];
+                Program.fullID = hID.Split(new string[] {
+          "\"}"
+        }, StringSplitOptions.None)[0];
 
                     Console.Write("Converting Url ", Color.White);
                     Console.Write("[", Color.IndianRed);
@@ -110,15 +101,13 @@ namespace UrlTube
 
         }
 
-        public static void JsonParser(string rawData)
-        {
+        public static void JsonParser(string rawData) {
 
-            try
-            {
+            try {
                 JObject jobj = JObject.Parse(rawData);
 
                 string Urls = jobj.SelectToken("url").ToString();
-                Console.WriteLine(Urls);
+                //Console.WriteLine(Urls);
                 try
                 {
                     if (Urls.Contains("https://du."))
@@ -137,13 +126,11 @@ namespace UrlTube
                         string append = "https://du.";
 
                         Program.rdyUrl = string.Format("{0}{1}", new object[] {
-                            append,
-                            fdlUrl
-                        });
-
-                        Console.WriteLine(Program.rdyUrl);
+              append,
+              fdlUrl
+            });
                     }
-                    else 
+                    else
                     {
                         string dlUrl = Urls.Split(new string[] {
                             "https:\\/\\/ "
@@ -156,26 +143,22 @@ namespace UrlTube
                         string append = "https:\\/\\/";
 
                         Program.rdyUrl = string.Format("{0}{1}", new object[] {
-                            append,
-                            fdlUrl
-                        });
-
-                        Console.WriteLine(Program.rdyUrl);
+              append,
+              fdlUrl
+            });
                     }
 
                 }
-                catch (Exception e)
+                catch
                 {
-                    Console.WriteLine(e);
+
                 }
 
                 dirDownload(Program.rdyUrl);
                 
                 //Console.WriteLine(Program.rdyUrl);
 
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 Console.WriteLine(e);
                 Console.WriteLine("Failed: {0}", Program.fullID);
                 //Console.WriteLine(rawData);
@@ -183,31 +166,25 @@ namespace UrlTube
             }
         }
 
-        public static void dirDownload(string downloadUrl)
-        {
-            using (var Client = new WebClient())
-            {
+        public static void dirDownload(string downloadUrl) {
+            using(var Client = new WebClient()) {
                 string dlloc = AppDomain.CurrentDomain.BaseDirectory + "\\" + Program.fullID + ".mp4";
                 Client.DownloadFile(downloadUrl, dlloc);
                 return;
             }
         }
 
-        public class vidInfo
-        {
-            public string stream
-            {
+        public class vidInfo {
+            public string stream {
                 get;
                 set;
             }
-            public string url
-            {
+            public string url {
                 get;
                 set;
             }
         }
-        public static void Trimmer()
-        {
+        public static void Trimmer() {
             Console.ReadKey();
         }
     }
