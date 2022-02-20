@@ -1,238 +1,197 @@
-using System;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Windows.Forms;
-using Colorful;
 using Leaf.xNet;
 using Newtonsoft.Json.Linq;
+using System;
+using System.IO;
+using System.Linq;
+using System.Windows.Forms;
+using System.Net;
+using Console = Colorful.Console;
+using System.Drawing;
 
 namespace UrlTube
 {
-	// Token: 0x02000004 RID: 4
-	internal class Converter
-	{
-		// Token: 0x06000005 RID: 5 RVA: 0x00002120 File Offset: 0x00000320
-		public static void Loader()
-		{
-			using (OpenFileDialog ofd = new OpenFileDialog())
-			{
-				ofd.Title = "Open Video Urls";
-				ofd.Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*";
-				ofd.FilterIndex = 2;
-				ofd.RestoreDirectory = true;
-				bool flag = ofd.ShowDialog() == DialogResult.OK;
-				if (flag)
-				{
-					string fPath = ofd.FileName;
-					string[] fUrls = File.ReadAllLines(fPath);
-					foreach (string fUrl in fUrls)
-					{
-						Program.rawUrls.Add(fUrl);
-					}
-					foreach (string fUrl2 in Program.rawUrls)
-					{
-						Program.FilteredUrls.Add(Converter.videoID(fUrl2));
-					}
-					Program.FilteredUrls = Program.FilteredUrls.Distinct<string>().ToList<string>();
-					foreach (string fID in Program.FilteredUrls)
-					{
-						Program.UrlsDL.Add(Converter.videoDL(fID));
-					}
-					Colorful.Console.Write("Successfully loaded", Color.IndianRed);
-					Colorful.Console.Write(" {0}", Color.White, new object[]
-					{
-						Program.FilteredUrls.Count<string>()
-					});
-					Colorful.Console.Write(" valid UrlTube urls!\n\n", Color.IndianRed);
-					foreach (string dlLoc in Program.UrlsDL)
-					{
-						Converter.Downloader(dlLoc);
-					}
-				}
-			}
-		}
+    internal class Converter
+    {
+        public static void Loader()
+        {
+            using (OpenFileDialog ofd = new OpenFileDialog()) // Directory to open your URL file
+            {
+                ofd.Title = "Open Video Urls";
+                ofd.Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*";
+                ofd.FilterIndex = 2;
+                ofd.RestoreDirectory = true;
 
-		// Token: 0x06000006 RID: 6 RVA: 0x00002338 File Offset: 0x00000538
-		public static string videoID(string vidUrl)
-		{
-			bool flag = vidUrl.Contains("https://www.youtube.com/watch?v=");
-			if (flag)
-			{
-				vidUrl = vidUrl.Split(new string[]
-				{
-					" "
-				}, StringSplitOptions.None)[0];
-			}
-			return vidUrl;
-		}
+                if (ofd.ShowDialog() == DialogResult.OK) // If file is valid go-on!
+                {
+                    string fPath = ofd.FileName;
+                    var fUrls = File.ReadAllLines(fPath); // Read all lines/urls in the .txt file
+                    foreach (string fUrl in fUrls) Program.rawUrls.Add(fUrl); // Add all urls into List<string>
+                    foreach (string fUrl in Program.rawUrls) Program.FilteredUrls.Add(videoID(fUrl)); //Foreach url cycle thru videoID to get VideoID (which is currently off, because I don't need it for now)
+                    Program.FilteredUrls = Program.FilteredUrls.Distinct().ToList<string>(); // Distinct (remove duplicates from lists)
+                    foreach (string fID in Program.FilteredUrls) Program.UrlsDL.Add(videoDL(fID)); // Add all POST-ready request into List<string>
+                                                                                                   //foreach (string finalDL in Program.UrlsDL) Console.WriteLine($"{finalDL}");
+                    foreach (string dlLoc in Program.UrlsDL) Downloader(dlLoc);
 
-		// Token: 0x06000007 RID: 7 RVA: 0x00002378 File Offset: 0x00000578
-		public static string videoDL(string vidID)
-		{
-			string Ldl = "{\"url\":\"";
-			string Ldr = "\"}";
-			return string.Format("{0}{1}{2}", new object[]
-			{
-				Ldl,
-				vidID,
-				Ldr
-			});
-		}
+                }
+            }
+        }
+        public static string videoID(string vidUrl)
+        {
+            if (vidUrl.Contains("https://www.youtube.com/watch?v="))
+            {
+                vidUrl = vidUrl.Split(new string[] {
+          " ",
+          // Remove unnecessary blank spaces {"https://www.youtube.com/watch?v="}
 
-		// Token: 0x06000008 RID: 8 RVA: 0x000023B4 File Offset: 0x000005B4
-		public static void Downloader(string dlLoc)
-		{
-			using (HttpRequest hr = new HttpRequest())
-			{
-				hr.AddHeader("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36");
-				hr.AllowAutoRedirect = false;
-				hr.AllowEmptyHeaderValues = true;
-				hr.IgnoreInvalidCookie = false;
-				hr.IgnoreProtocolErrors = true;
-				string hID = dlLoc.Split(new string[]
-				{
-					"{\"url\":\"https://www.youtube.com/watch?v="
-				}, StringSplitOptions.None)[1];
-				Program.fullID = hID.Split(new string[]
-				{
-					"\"}"
-				}, StringSplitOptions.None)[0];
-				Colorful.Console.Write("Converting Url ", Color.White);
-				Colorful.Console.Write("[", Color.IndianRed);
-				Colorful.Console.Write("{0}", Color.White, new object[]
-				{
-					Program.icrCount
-				});
-				Colorful.Console.Write("] ", Color.IndianRed);
-				Colorful.Console.Write(" | ID:");
-				Colorful.Console.Write(" {0}", Color.IndianRed, new object[]
-				{
-					Program.fullID
-				});
-				Colorful.Console.Write(" | Title: ", Color.White);
-				string rwData = hr.Post("https://api.onlinevideoconverter.pro/api/convert", dlLoc, "application/json").ToString();
-				Converter.JsonParser(rwData);
-			}
-		}
+        },
+                StringSplitOptions.None)[0];
+            }
 
-		// Token: 0x06000009 RID: 9 RVA: 0x00002504 File Offset: 0x00000704
-		public static void JsonParser(string rawData)
-		{
-			try
-			{
-				JObject jobj = JObject.Parse(rawData);
-				string Urls = jobj.SelectToken("url").ToString();
-				string vid = jobj.SelectToken("meta").ToString();
-				JObject jobj2 = JObject.Parse(vid);
-				string vidTitle = jobj2.SelectToken("title").ToString();
-				Colorful.Console.Write(" " + vidTitle, Color.IndianRed);
-				Colorful.Console.Write(" | Status: ", Color.White);
-				try
-				{
-					bool flag = Urls.Contains("https://du.");
-					if (flag)
-					{
-						string dlUrl = Urls.Split(new string[]
-						{
-							"https://du."
-						}, StringSplitOptions.None)[1];
-						string fdlUrl = dlUrl.Split(new string[]
-						{
-							"\","
-						}, StringSplitOptions.None)[0];
-						string append = "https://du.";
-						Program.rdyUrl = string.Format("{0}{1}", new object[]
-						{
-							append,
-							fdlUrl
-						});
-					}
-					else
-					{
-						string dlUrl2 = Urls.Split(new string[]
-						{
-							"https://rr"
-						}, StringSplitOptions.None)[1];
-						string fdlUrl2 = dlUrl2.Split(new string[]
-						{
-							"\","
-						}, StringSplitOptions.None)[0];
-						string append2 = "https://rr";
-						Program.rdyUrl = string.Format("{0}{1}", new object[]
-						{
-							append2,
-							fdlUrl2
-						});
-					}
-				}
-				catch (Exception e)
-				{
-					Colorful.Console.Write("Fail!\n", Color.Red);
-				}
-				Converter.dirDownload(Program.rdyUrl);
-			}
-			catch (Exception e2)
-			{
-				Colorful.Console.Write("Fail!\n", Color.Red);
-			}
-		}
+            return vidUrl;
+        }
 
-		// Token: 0x0600000A RID: 10 RVA: 0x000026B8 File Offset: 0x000008B8
-		public static void dirDownload(string downloadUrl)
-		{
-			Program.icrCount++;
-			using (WebClient Client = new WebClient())
-			{
-				string dlloc = string.Concat(new string[]
-				{
-					AppDomain.CurrentDomain.BaseDirectory,
-					"\\UrlTube\\",
-					Directories.dirTime,
-					"\\",
-					Program.fullID,
-					".mp4"
-				});
-				bool flag = File.Exists(string.Concat(new string[]
-				{
-					AppDomain.CurrentDomain.BaseDirectory,
-					"\\UrlTube\\",
-					Directories.dirTime,
-					"\\",
-					Program.fullID,
-					".mp4"
-				}));
-				if (flag)
-				{
-					Colorful.Console.Write("Duplicate!\n", Color.Orange);
-				}
-				else
-				{
-					Client.DownloadFile(downloadUrl, dlloc);
-					Colorful.Console.Write("Success!\n", Color.Green);
-				}
-			}
-		}
+        public static string videoDL(string vidID)
+        {
+            string Ldl = "{\"url\":\""; //Necessary for POST request
+            string Ldr = "\"}"; //Necessary for POST request
 
-		// Token: 0x0600000B RID: 11 RVA: 0x000027AC File Offset: 0x000009AC
-		public static void Trimmer()
-		{
-			Colorful.Console.ReadKey();
-		}
+            return string.Format("{0}{1}{2}", new object[] // Format string into right POST-format
+            {
+        Ldl,
+        vidID,
+        Ldr
+            });
+        }
 
-		// Token: 0x02000006 RID: 6
-		public class vidInfo
-		{
-			// Token: 0x17000001 RID: 1
-			// (get) Token: 0x06000012 RID: 18 RVA: 0x0000293D File Offset: 0x00000B3D
-			// (set) Token: 0x06000013 RID: 19 RVA: 0x00002945 File Offset: 0x00000B45
-			public string stream { get; set; }
+        public static void Downloader(string dlLoc)
+        {
+            using (HttpRequest hr = new HttpRequest())
+            {
+                hr.AddHeader("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36");
+                hr.AllowAutoRedirect = false;
+                hr.AllowEmptyHeaderValues = true;
+                hr.IgnoreInvalidCookie = false;
+                hr.IgnoreProtocolErrors = true;
 
-			// Token: 0x17000002 RID: 2
-			// (get) Token: 0x06000014 RID: 20 RVA: 0x0000294E File Offset: 0x00000B4E
-			// (set) Token: 0x06000015 RID: 21 RVA: 0x00002956 File Offset: 0x00000B56
-			public string url { get; set; }
-		}
-	}
+                string hID = dlLoc.Split(new string[] // Example {"url":"https://www.youtube.com/watch?v=t7a-b1zTS60"}
+                {
+          "{\"url\":\"https://www.youtube.com/watch?v=",
+                },
+                StringSplitOptions.None)[1];
+
+                Program.fullID = hID.Split(new string[] {
+          "\"}"
+        },
+                StringSplitOptions.None)[0];
+
+                Console.Write("Converting Url ", Color.White);
+                Console.Write("[", Color.IndianRed);
+                Console.Write("{0}", Color.White, Program.icrCount);
+                Console.Write("] ", Color.IndianRed);
+                Console.Write(" | ID:");
+                Console.Write(" {0} ", Color.IndianRed, Program.fullID);
+                Console.Write(" | Title: ", Color.White);
+
+                //Console.WriteLine(fullID);
+
+                var rwData = hr.Post("https://api.onlinevideoconverter.pro/api/convert", dlLoc, "application/json").ToString();
+                JsonParser(rwData);
+                //Console.WriteLine(rwData);
+                //Console.WriteLine("Finished: {0}", Program.fullID);
+            }
+        }
+
+        public static void JsonParser(string rawData)
+        {
+            try
+            {
+                JObject jobj = JObject.Parse(rawData);
+                string Urls = jobj.SelectToken("url").ToString();
+                string vidMeta = jobj.SelectToken("meta").ToString();
+                var vidTitle = JObject.Parse(vidMeta).SelectToken("title").ToString();
+                Console.Write(vidTitle, Color.IndianRed);
+                Console.Write(" | Status: ", Color.White);
+
+                //Console.WriteLine(Urls);
+                try
+                {
+                    if (Urls.Contains("https://du."))
+                    {
+
+                        string dlUrl = Urls.Split(new string[] {
+              "https://du."
+            },
+                        StringSplitOptions.None)[1];
+
+                        //Console.WriteLine(dlUrl);
+
+                        string fdlUrl = dlUrl.Split(new string[] {
+              "\","
+            },
+                        StringSplitOptions.None)[0];
+
+                        string append = "https://du.";
+
+                        Program.rdyUrl = string.Format("{0}{1}", new object[] {
+              append,
+              fdlUrl
+            });
+                    }
+                    else
+                    {
+                        string dlUrl = Urls.Split(new string[] {
+              "https://rr"
+            },
+                        StringSplitOptions.None)[1];
+
+                        string fdlUrl = dlUrl.Split(new string[] {
+              "\","
+            },
+                        StringSplitOptions.None)[0];
+
+                        string append = "https://rr";
+
+                        Program.rdyUrl = string.Format("{0}{1}", new object[] {
+              append,
+              fdlUrl
+            });
+                    }
+
+                }
+                catch (Exception err)
+                {
+                    Console.WriteLine(err);
+                    Console.WriteLine("Failed", Color.Red);
+                }
+
+                dirDownload(Program.rdyUrl);
+
+            }
+            catch (Exception err)
+            {
+                Console.WriteLine(err);
+                Console.WriteLine("Failed", Color.Red);
+                return;
+            }
+        }
+
+        public static void dirDownload(string downloadUrl)
+        {
+            Program.icrCount++;
+            using (var Client = new WebClient())
+            {
+                string dlloc = AppDomain.CurrentDomain.BaseDirectory + "\\" + Program.fullID + ".mp4";
+
+                if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\" + Program.fullID + ".mp4"))
+                {
+                    Console.WriteLine("Duplicate!", Color.Orange);
+                    return;
+                }
+                Client.DownloadFile(downloadUrl, dlloc);
+                Console.WriteLine("Success!", Color.Green);
+                return;
+            }
+        }
+
+    }
 }
