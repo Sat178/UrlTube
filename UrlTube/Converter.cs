@@ -1,66 +1,33 @@
 using Leaf.xNet;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Windows.Forms;
 using System.Net;
+using System.Windows.Forms;
 using Console = Colorful.Console;
-using System.Drawing;
 
 namespace UrlTube
 {
     internal class Converter
     {
-        public static void Loader()
+        public static void dirDownload(string downloadUrl)
         {
-            using (OpenFileDialog ofd = new OpenFileDialog()) // Directory to open your URL file
+            Program.icrCount++;
+            using (var Client = new WebClient())
             {
-                ofd.Title = "Open Video Urls";
-                ofd.Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*";
-                ofd.FilterIndex = 2;
-                ofd.RestoreDirectory = true;
+                string dlloc = AppDomain.CurrentDomain.BaseDirectory + "\\" + Program.fullID + ".mp4";
 
-                if (ofd.ShowDialog() == DialogResult.OK) // If file is valid go-on!
+                if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\" + Program.fullID + ".mp4"))
                 {
-                    string fPath = ofd.FileName;
-                    var fUrls = File.ReadAllLines(fPath); // Read all lines/urls in the .txt file
-                    foreach (string fUrl in fUrls) Program.rawUrls.Add(fUrl); // Add all urls into List<string>
-                    foreach (string fUrl in Program.rawUrls) Program.FilteredUrls.Add(videoID(fUrl)); //Foreach url cycle thru videoID to get VideoID (which is currently off, because I don't need it for now)
-                    Program.FilteredUrls = Program.FilteredUrls.Distinct().ToList<string>(); // Distinct (remove duplicates from lists)
-                    foreach (string fID in Program.FilteredUrls) Program.UrlsDL.Add(videoDL(fID)); // Add all POST-ready request into List<string>
-                                                                                                   //foreach (string finalDL in Program.UrlsDL) Console.WriteLine($"{finalDL}");
-                    foreach (string dlLoc in Program.UrlsDL) Downloader(dlLoc);
-
+                    Console.WriteLine("Duplicate!", Color.Orange);
+                    return;
                 }
+                Client.DownloadFile(downloadUrl, dlloc);
+                Console.WriteLine("Success!", Color.Green);
+                return;
             }
-        }
-        public static string videoID(string vidUrl)
-        {
-            if (vidUrl.Contains("https://www.youtube.com/watch?v="))
-            {
-                vidUrl = vidUrl.Split(new string[] {
-          " ",
-          // Remove unnecessary blank spaces {"https://www.youtube.com/watch?v="}
-
-        },
-                StringSplitOptions.None)[0];
-            }
-
-            return vidUrl;
-        }
-
-        public static string videoDL(string vidID)
-        {
-            string Ldl = "{\"url\":\""; //Necessary for POST request
-            string Ldr = "\"}"; //Necessary for POST request
-
-            return string.Format("{0}{1}{2}", new object[] // Format string into right POST-format
-            {
-        Ldl,
-        vidID,
-        Ldr
-            });
         }
 
         public static void Downloader(string dlLoc)
@@ -106,7 +73,9 @@ namespace UrlTube
             try
             {
                 JObject jobj = JObject.Parse(rawData);
+
                 string Urls = jobj.SelectToken("url").ToString();
+
                 string vidMeta = jobj.SelectToken("meta").ToString();
                 var vidTitle = JObject.Parse(vidMeta).SelectToken("title").ToString();
                 Console.Write(vidTitle, Color.IndianRed);
@@ -117,7 +86,6 @@ namespace UrlTube
                 {
                     if (Urls.Contains("https://du."))
                     {
-
                         string dlUrl = Urls.Split(new string[] {
               "https://du."
             },
@@ -156,7 +124,6 @@ namespace UrlTube
               fdlUrl
             });
                     }
-
                 }
                 catch (Exception err)
                 {
@@ -165,7 +132,6 @@ namespace UrlTube
                 }
 
                 dirDownload(Program.rdyUrl);
-
             }
             catch (Exception err)
             {
@@ -175,23 +141,54 @@ namespace UrlTube
             }
         }
 
-        public static void dirDownload(string downloadUrl)
+        public static void Loader()
         {
-            Program.icrCount++;
-            using (var Client = new WebClient())
+            using (OpenFileDialog ofd = new OpenFileDialog()) // Directory to open your URL file
             {
-                string dlloc = AppDomain.CurrentDomain.BaseDirectory + "\\" + Program.fullID + ".mp4";
+                ofd.Title = "Open Video Urls";
+                ofd.Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*";
+                ofd.FilterIndex = 2;
+                ofd.RestoreDirectory = true;
 
-                if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\" + Program.fullID + ".mp4"))
+                if (ofd.ShowDialog() == DialogResult.OK) // If file is valid go-on!
                 {
-                    Console.WriteLine("Duplicate!", Color.Orange);
-                    return;
+                    string fPath = ofd.FileName;
+                    var fUrls = File.ReadAllLines(fPath); // Read all lines/urls in the .txt file
+                    foreach (string fUrl in fUrls) Program.rawUrls.Add(fUrl); // Add all urls into List<string>
+                    foreach (string fUrl in Program.rawUrls) Program.FilteredUrls.Add(videoID(fUrl)); //Foreach url cycle thru videoID to get VideoID (which is currently off, because I don't need it for now)
+                    Program.FilteredUrls = Program.FilteredUrls.Distinct().ToList<string>(); // Distinct (remove duplicates from lists)
+                    foreach (string fID in Program.FilteredUrls) Program.UrlsDL.Add(videoDL(fID)); // Add all POST-ready request into List<string>
+                                                                                                   //foreach (string finalDL in Program.UrlsDL) Console.WriteLine($"{finalDL}");
+                    foreach (string dlLoc in Program.UrlsDL) Downloader(dlLoc);
                 }
-                Client.DownloadFile(downloadUrl, dlloc);
-                Console.WriteLine("Success!", Color.Green);
-                return;
             }
         }
 
+        public static string videoDL(string vidID)
+        {
+            string Ldl = "{\"url\":\""; //Necessary for POST request
+            string Ldr = "\"}"; //Necessary for POST request
+
+            return string.Format("{0}{1}{2}", new object[] // Format string into right POST-format
+            {
+        Ldl,
+        vidID,
+        Ldr
+            });
+        }
+
+        public static string videoID(string vidUrl)
+        {
+            if (vidUrl.Contains("https://www.youtube.com/watch?v="))
+            {
+                vidUrl = vidUrl.Split(new string[] {
+          " ",
+          // Remove unnecessary blank spaces {"https://www.youtube.com/watch?v="}
+        },
+                StringSplitOptions.None)[0];
+            }
+
+            return vidUrl;
+        }
     }
 }
