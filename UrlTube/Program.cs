@@ -15,7 +15,9 @@ namespace UrlTube
             Interface(); CLI();
             Directories.StartUp();
             Converter.Loader();
+            Console.WriteLine("Finished converting {0} urls!", Color.Green, UrlsDL.Count<string>());
             Console.ReadKey(); // Prevent closing program
+
         }
 
         public static void Interface()
@@ -46,5 +48,6 @@ namespace UrlTube
         public static string fullID = string.Empty;
         public static string rdyUrl = string.Empty;
         public static int UrlCount = 0;
+        public static int icrCount = 1;
     }
 }
